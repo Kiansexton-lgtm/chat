@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nightcord</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase SDKs (compat) -->
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div id="app-root">
+
+    <!-- Auth screen -->
+    <div id="auth-screen" class="auth-screen">
+      <div class="auth-card">
+        <h1>Nightcord</h1>
+        <p class="auth-subtitle">Sign in or create an account</p>
+
+        <div class="auth-toggle">
+          <button id="auth-login-tab" class="auth-tab active">Login</button>
+          <button id="auth-register-tab" class="auth-tab">Register</button>
+        </div>
+
+        <form id="login-form" class="auth-form">
+          <input type="email" id="login-email" placeholder="Email" required />
+          <input type="password" id="login-password" placeholder="Password" required />
+          <button type="submit">Login</button>
+          <p class="auth-error" id="login-error"></p>
+        </form>
+
+        <form id="register-form" class="auth-form hidden">
+          <input type="text" id="register-username" placeholder="Username" required />
+          <input type="email" id="register-email" placeholder="Email" required />
+          <input type="password" id="register-password" placeholder="Password (min 6 chars)" required />
+          <button type="submit">Create account</button>
+          <p class="auth-error" id="register-error"></p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Main app -->
+    <div id="main-app" class="main-app hidden">
+      <div class="sidebar-left">
+        <div class="sidebar-logo">
+          <span class="logo-dot"></span>
+          <span>Nightcord</span>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Rooms</div>
+          <div id="rooms-list" class="sidebar-list"></div>
+          <button id="create-room-btn" class="sidebar-button">+ Create Room</button>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Direct Messages</div>
+          <div id="dms-list" class="sidebar-list"></div>
+        </div>
+      </div>
+
+      <div class="main-column">
+        <header class="top-bar">
+          <div class="top-bar-left">
+            <h2 id="current-room-name">Select a room</h2>
+            <span id="current-room-meta" class="top-bar-meta"></span>
+          </div>
+          <div class="top-bar-right">
+            <span id="current-user-label"></span>
+            <button id="logout-btn" class="ghost-button">Logout</button>
+          </div>
+        </header>
+
+        <main class="chat-area">
+          <div id="messages" class="messages"></div>
+        </main>
+
+        <form id="message-form" class="message-input-bar">
+          <input
+            type="text"
+            id="message-input"
+            placeholder="Message..."
+            autocomplete="off"
+          />
+          <button type="submit">Send</button>
+        </form>
+      </div>
+
+      <div class="sidebar-right">
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Friends</div>
+          <div id="friends-list" class="sidebar-list"></div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Friend Requests</div>
+          <div id="friend-requests-list" class="sidebar-list"></div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Add Friend</div>
+          <form id="add-friend-form" class="inline-form">
+            <input
+              type="text"
+              id="add-friend-input"
+              placeholder="username#tag"
+              autocomplete="off"
+            />
+            <button type="submit">Add</button>
+          </form>
+          <p class="small-text" id="add-friend-status"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
