@@ -1,92 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Nightcord Minimal</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase -->
+  <!-- Firebase compat SDKs -->
   <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <script defer src="app.js"></script>
 </head>
-
 <body>
-  <!-- AUTH SCREEN -->
-  <div id="auth-screen" class="auth-screen">
-    <div class="auth-box">
-      <h1>Nightcord</h1>
-
-      <div class="auth-tabs">
-        <button id="login-tab" class="active">Login</button>
-        <button id="register-tab">Register</button>
+  <!-- AUTH -->
+  <div id="auth-screen" class="screen auth-screen">
+    <div class="card auth-card">
+      <div class="brand">
+        <h1>Nightcord</h1>
+        <p class="muted">Minimal Discord‑style chat</p>
       </div>
 
-      <form id="login-form" class="auth-form">
-        <input id="login-email" type="email" placeholder="Email" required />
+      <div class="tabs">
+        <button id="tab-login" class="tab active">Login</button>
+        <button id="tab-register" class="tab">Register</button>
+      </div>
+
+      <!-- LOGIN: username + password -->
+      <form id="form-login" class="form">
+        <input id="login-username" type="text" placeholder="Username" required />
         <input id="login-password" type="password" placeholder="Password" required />
-        <button type="submit">Login</button>
+        <div class="row">
+          <button type="submit" class="btn primary">Sign in</button>
+        </div>
         <p id="login-error" class="error"></p>
       </form>
 
-      <form id="register-form" class="auth-form hidden">
+      <!-- REGISTER: username + password -->
+      <form id="form-register" class="form hidden">
         <input id="reg-username" type="text" placeholder="Username" required />
-        <input id="reg-email" type="email" placeholder="Email" required />
-        <input id="reg-password" type="password" placeholder="Password" required />
-        <button type="submit">Create Account</button>
+        <input id="reg-password" type="password" placeholder="Password (min 6)" required />
+        <div class="row">
+          <button type="submit" class="btn primary">Create account</button>
+        </div>
         <p id="register-error" class="error"></p>
       </form>
     </div>
   </div>
 
-  <!-- MAIN APP -->
-  <div id="app" class="app hidden">
+  <!-- APP -->
+  <div id="app" class="screen app hidden" aria-hidden="true">
+    <!-- LEFT: channels & DMs -->
+    <aside class="panel left">
+      <div class="panel-header">
+        <strong>Channels</strong>
+        <button id="btn-new-channel" class="icon-btn">＋</button>
+      </div>
+      <div id="channels" class="list"></div>
 
-    <!-- LEFT: CHANNELS -->
-    <aside class="sidebar-left">
-      <div class="section-title">Channels</div>
-      <div id="rooms-list" class="list"></div>
-      <button id="create-room-btn" class="create-btn">+ New Channel</button>
+      <div class="panel-divider"></div>
 
-      <div class="section-title">Direct Messages</div>
-      <div id="dms-list" class="list"></div>
+      <div class="panel-header">
+        <strong>Direct Messages</strong>
+      </div>
+      <div id="dms" class="list"></div>
     </aside>
 
-    <!-- CENTER: CHAT -->
-    <main class="chat">
+    <!-- CENTER: chat -->
+    <main class="panel center">
       <header class="chat-header">
-        <h2 id="room-title">Select a channel</h2>
-        <button id="logout-btn" class="logout-btn">Logout</button>
+        <div>
+          <h2 id="room-title">No channel selected</h2>
+          <div id="room-sub" class="muted small">Select a channel or DM to start</div>
+        </div>
+        <div class="header-actions">
+          <span id="me-label" class="muted small"></span>
+          <button id="btn-logout" class="btn ghost">Logout</button>
+        </div>
       </header>
 
-      <div id="messages" class="messages"></div>
+      <section id="messages" class="messages" aria-live="polite"></section>
 
-      <form id="message-form" class="message-bar">
-        <input id="message-input" type="text" placeholder="Message…" autocomplete="off" />
-        <button type="submit">Send</button>
+      <form id="form-message" class="composer" aria-label="Send message">
+        <input id="input-message" type="text" placeholder="Message" autocomplete="off" />
+        <button id="btn-send" class="btn primary" type="submit">Send</button>
       </form>
     </main>
 
-    <!-- RIGHT: FRIENDS -->
-    <aside class="sidebar-right">
-      <div class="section-title">Friends</div>
-      <div id="friends-list" class="list"></div>
+    <!-- RIGHT: friends -->
+    <aside class="panel right">
+      <div class="panel-header">
+        <strong>Friends</strong>
+      </div>
+      <div id="friends" class="list"></div>
 
-      <div class="section-title">Requests</div>
-      <div id="requests-list" class="list"></div>
+      <div class="panel-divider"></div>
 
-      <div class="section-title">Add Friend</div>
-      <form id="add-friend-form" class="add-friend">
-        <input id="add-friend-input" type="text" placeholder="username#tag" />
-        <button>Add</button>
+      <div class="panel-header">
+        <strong>Requests</strong>
+      </div>
+      <div id="requests" class="list"></div>
+
+      <div class="panel-divider"></div>
+
+      <div class="panel-header">
+        <strong>Add Friend</strong>
+      </div>
+      <form id="form-add-friend" class="form-inline">
+        <input id="input-add-friend" type="text" placeholder="username#tag" />
+        <button class="btn" type="submit">Add</button>
       </form>
-      <p id="add-friend-status" class="status"></p>
+      <p id="add-friend-status" class="muted small"></p>
     </aside>
-
   </div>
 </body>
 </html>
