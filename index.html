@@ -2,121 +2,91 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Nightcord</title>
+  <title>Nightcord Minimal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase SDKs (compat) -->
+  <!-- Firebase -->
   <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <script defer src="app.js"></script>
 </head>
+
 <body>
-  <div id="app-root">
+  <!-- AUTH SCREEN -->
+  <div id="auth-screen" class="auth-screen">
+    <div class="auth-box">
+      <h1>Nightcord</h1>
 
-    <!-- Auth screen -->
-    <div id="auth-screen" class="auth-screen">
-      <div class="auth-card">
-        <h1>Nightcord</h1>
-        <p class="auth-subtitle">Sign in or create an account</p>
-
-        <div class="auth-toggle">
-          <button id="auth-login-tab" class="auth-tab active">Login</button>
-          <button id="auth-register-tab" class="auth-tab">Register</button>
-        </div>
-
-        <form id="login-form" class="auth-form">
-          <input type="email" id="login-email" placeholder="Email" required />
-          <input type="password" id="login-password" placeholder="Password" required />
-          <button type="submit">Login</button>
-          <p class="auth-error" id="login-error"></p>
-        </form>
-
-        <form id="register-form" class="auth-form hidden">
-          <input type="text" id="register-username" placeholder="Username" required />
-          <input type="email" id="register-email" placeholder="Email" required />
-          <input type="password" id="register-password" placeholder="Password (min 6 chars)" required />
-          <button type="submit">Create account</button>
-          <p class="auth-error" id="register-error"></p>
-        </form>
+      <div class="auth-tabs">
+        <button id="login-tab" class="active">Login</button>
+        <button id="register-tab">Register</button>
       </div>
+
+      <form id="login-form" class="auth-form">
+        <input id="login-email" type="email" placeholder="Email" required />
+        <input id="login-password" type="password" placeholder="Password" required />
+        <button type="submit">Login</button>
+        <p id="login-error" class="error"></p>
+      </form>
+
+      <form id="register-form" class="auth-form hidden">
+        <input id="reg-username" type="text" placeholder="Username" required />
+        <input id="reg-email" type="email" placeholder="Email" required />
+        <input id="reg-password" type="password" placeholder="Password" required />
+        <button type="submit">Create Account</button>
+        <p id="register-error" class="error"></p>
+      </form>
     </div>
+  </div>
 
-    <!-- Main app -->
-    <div id="main-app" class="main-app hidden">
-      <div class="sidebar-left">
-        <div class="sidebar-logo">
-          <span class="logo-dot"></span>
-          <span>Nightcord</span>
-        </div>
+  <!-- MAIN APP -->
+  <div id="app" class="app hidden">
 
-        <div class="sidebar-section">
-          <div class="sidebar-section-title">Rooms</div>
-          <div id="rooms-list" class="sidebar-list"></div>
-          <button id="create-room-btn" class="sidebar-button">+ Create Room</button>
-        </div>
+    <!-- LEFT: CHANNELS -->
+    <aside class="sidebar-left">
+      <div class="section-title">Channels</div>
+      <div id="rooms-list" class="list"></div>
+      <button id="create-room-btn" class="create-btn">+ New Channel</button>
 
-        <div class="sidebar-section">
-          <div class="sidebar-section-title">Direct Messages</div>
-          <div id="dms-list" class="sidebar-list"></div>
-        </div>
-      </div>
+      <div class="section-title">Direct Messages</div>
+      <div id="dms-list" class="list"></div>
+    </aside>
 
-      <div class="main-column">
-        <header class="top-bar">
-          <div class="top-bar-left">
-            <h2 id="current-room-name">Select a room</h2>
-            <span id="current-room-meta" class="top-bar-meta"></span>
-          </div>
-          <div class="top-bar-right">
-            <span id="current-user-label"></span>
-            <button id="logout-btn" class="ghost-button">Logout</button>
-          </div>
-        </header>
+    <!-- CENTER: CHAT -->
+    <main class="chat">
+      <header class="chat-header">
+        <h2 id="room-title">Select a channel</h2>
+        <button id="logout-btn" class="logout-btn">Logout</button>
+      </header>
 
-        <main class="chat-area">
-          <div id="messages" class="messages"></div>
-        </main>
+      <div id="messages" class="messages"></div>
 
-        <form id="message-form" class="message-input-bar">
-          <input
-            type="text"
-            id="message-input"
-            placeholder="Message..."
-            autocomplete="off"
-          />
-          <button type="submit">Send</button>
-        </form>
-      </div>
+      <form id="message-form" class="message-bar">
+        <input id="message-input" type="text" placeholder="Message…" autocomplete="off" />
+        <button type="submit">Send</button>
+      </form>
+    </main>
 
-      <div class="sidebar-right">
-        <div class="sidebar-section">
-          <div class="sidebar-section-title">Friends</div>
-          <div id="friends-list" class="sidebar-list"></div>
-        </div>
+    <!-- RIGHT: FRIENDS -->
+    <aside class="sidebar-right">
+      <div class="section-title">Friends</div>
+      <div id="friends-list" class="list"></div>
 
-        <div class="sidebar-section">
-          <div class="sidebar-section-title">Friend Requests</div>
-          <div id="friend-requests-list" class="sidebar-list"></div>
-        </div>
+      <div class="section-title">Requests</div>
+      <div id="requests-list" class="list"></div>
 
-        <div class="sidebar-section">
-          <div class="sidebar-section-title">Add Friend</div>
-          <form id="add-friend-form" class="inline-form">
-            <input
-              type="text"
-              id="add-friend-input"
-              placeholder="username#tag"
-              autocomplete="off"
-            />
-            <button type="submit">Add</button>
-          </form>
-          <p class="small-text" id="add-friend-status"></p>
-        </div>
-      </div>
-    </div>
+      <div class="section-title">Add Friend</div>
+      <form id="add-friend-form" class="add-friend">
+        <input id="add-friend-input" type="text" placeholder="username#tag" />
+        <button>Add</button>
+      </form>
+      <p id="add-friend-status" class="status"></p>
+    </aside>
+
   </div>
 </body>
 </html>
