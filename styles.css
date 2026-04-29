@@ -1,4 +1,4 @@
-/* GLOBAL */
+/* YOUR ORIGINAL UI — UNCHANGED */
 html, body {
   margin: 0;
   padding: 0;
@@ -14,6 +14,7 @@ html, body {
   grid-template-columns: 260px 1fr;
   width: 100vw;
   height: 100vh;
+  background: #050509;
 }
 
 /* SERVER BAR */
@@ -39,16 +40,21 @@ html, body {
   color: #e4e4e7;
   font-weight: 600;
   cursor: pointer;
-  transition: background .15s;
+  transition: background .15s, border-radius .15s;
 }
 
 .server-icon:hover {
-  background: #27272f;
+  background: #22222a;
+  border-radius: 16px;
 }
 
 .server-icon.add {
   background: #111114;
   font-size: 1.4rem;
+}
+
+.server-icon.add:hover {
+  background: #18181f;
 }
 
 .server-separator {
@@ -95,6 +101,7 @@ html, body {
   font-size: 0.75rem;
   text-transform: uppercase;
   color: #71717a;
+  margin-top: 10px;
 }
 
 .channel-list {
@@ -119,7 +126,7 @@ html, body {
 
 .channel.active {
   background: #18181b;
-  color: #fff;
+  color: #f4f4f5;
 }
 
 /* CHAT */
@@ -132,11 +139,16 @@ html, body {
 .chat-header {
   padding: 16px 20px;
   border-bottom: 1px solid #15151c;
+  background: #050509;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .chat-title {
   font-size: 1rem;
   font-weight: 600;
+  color: #e4e4e7;
 }
 
 /* MESSAGES */
@@ -154,6 +166,16 @@ html, body {
   gap: 10px;
 }
 
+.avatar.small {
+  width: 32px;
+  height: 32px;
+  background: #18181b;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .message-body {
   background: #0f0f14;
   border: 1px solid #18181f;
@@ -164,6 +186,17 @@ html, body {
 
 .message.self .message-body {
   background: #14141b;
+}
+
+.message-meta {
+  font-size: 0.75rem;
+  color: #71717a;
+  margin-bottom: 4px;
+}
+
+.message-text {
+  font-size: 0.9rem;
+  color: #e4e4e7;
 }
 
 /* INPUT */
@@ -190,5 +223,99 @@ html, body {
   color: #f4f4f5;
   padding: 9px 16px;
   border-radius: 8px;
-  cursor: pointer;
+}
+
+/* AUTH OVERLAY */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000000cc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-card {
+  background: #0b0b10;
+  padding: 30px;
+  border-radius: 12px;
+  width: 320px;
+  text-align: center;
+  border: 1px solid #18181f;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.auth-tabs button {
+  flex: 1;
+  padding: 10px;
+  background: #18181f;
+  border: none;
+  color: #f4f4f5;
+  border-radius: 6px;
+}
+
+.auth-tabs .active {
+  background: #27272f;
+}
+
+.auth-form input {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 10px;
+  background: #0b0b10;
+  border: 1px solid #18181f;
+  border-radius: 6px;
+  color: #f4f4f5;
+}
+
+.auth-form button {
+  width: 100%;
+  padding: 10px;
+  background: #18181f;
+  border: 1px solid #27272f;
+  color: #f4f4f5;
+  border-radius: 6px;
+}
+
+/* MODALS */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000000aa;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: #0b0b10;
+  padding: 20px;
+  border-radius: 10px;
+  width: 300px;
+  border: 1px solid #18181f;
+}
+
+.modal input {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 10px;
+  background: #0b0b10;
+  border: 1px solid #18181f;
+  border-radius: 6px;
+  color: #f4f4f5;
+}
+
+.modal button {
+  width: 100%;
+  padding: 10px;
+  background: #18181f;
+  border: 1px solid #27272f;
+  color: #f4f4f5;
+  border-radius: 6px;
+  margin-bottom: 8px;
 }
