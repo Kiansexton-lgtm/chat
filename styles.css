@@ -1,11 +1,12 @@
-/* YOUR ORIGINAL UI — UNCHANGED */
+/* GLOBAL */
+
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  background: #050509;
+  background: #050509;          /* almost black */
   font-family: system-ui, sans-serif;
-  color: #f4f4f5;
+  color: #f4f4f5;               /* soft white */
   overflow: hidden;
 }
 
@@ -17,56 +18,10 @@ html, body {
   background: #050509;
 }
 
-/* SERVER BAR */
-.server-bar {
-  width: 72px;
-  background: #0b0b10;
-  border-right: 1px solid #15151c;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 12px;
-  gap: 12px;
-}
-
-.server-icon {
-  width: 48px;
-  height: 48px;
-  background: #18181b;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #e4e4e7;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background .15s, border-radius .15s;
-}
-
-.server-icon:hover {
-  background: #22222a;
-  border-radius: 16px;
-}
-
-.server-icon.add {
-  background: #111114;
-  font-size: 1.4rem;
-}
-
-.server-icon.add:hover {
-  background: #18181f;
-}
-
-.server-separator {
-  width: 32px;
-  height: 2px;
-  background: #15151c;
-  margin: 6px 0;
-}
-
 /* SIDEBAR */
+
 .sidebar {
-  background: #0b0b10;
+  background: #0b0b10;          /* deep grey-black */
   border-right: 1px solid #15151c;
   padding: 16px;
   display: flex;
@@ -83,11 +38,14 @@ html, body {
 .avatar {
   width: 36px;
   height: 36px;
-  background: #18181b;
+  background: #18181b;          /* neutral dark */
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #e4e4e7;
 }
 
 .status-dot {
@@ -97,6 +55,11 @@ html, body {
   border-radius: 50%;
 }
 
+.self-username {
+  font-size: 0.85rem;
+  color: #a1a1aa;
+}
+
 .section-title {
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -104,7 +67,23 @@ html, body {
   margin-top: 10px;
 }
 
-.channel-list {
+.add-friend {
+  display: flex;
+  gap: 8px;
+}
+
+.add-friend input {
+  flex: 1;
+  background: #0b0b10;
+  border: 1px solid #18181f;
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: #f4f4f5;
+  font-size: 0.85rem;
+}
+
+.request-list,
+.friend-list {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -113,36 +92,54 @@ html, body {
   gap: 6px;
 }
 
-.channel {
+.request-item,
+.friend-item {
   padding: 8px 10px;
   border-radius: 6px;
+  background: #0f0f14;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   color: #a1a1aa;
+  font-size: 0.85rem;
+}
+
+.friend-item {
   cursor: pointer;
 }
 
-.channel:hover {
+.friend-item:hover {
   background: #18181b;
 }
 
-.channel.active {
-  background: #18181b;
-  color: #f4f4f5;
+.request-actions button {
+  margin-left: 4px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
 }
 
-/* CHAT */
+/* CHAT AREA */
+
 .chat {
   display: flex;
   flex-direction: column;
   background: #050509;
 }
 
+/* HEADER */
+
 .chat-header {
   padding: 16px 20px;
   border-bottom: 1px solid #15151c;
   background: #050509;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+}
+
+.chat-header-info {
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-title {
@@ -151,7 +148,13 @@ html, body {
   color: #e4e4e7;
 }
 
+.chat-subtitle {
+  font-size: 0.8rem;
+  color: #71717a;
+}
+
 /* MESSAGES */
+
 .messages {
   flex: 1;
   overflow-y: auto;
@@ -166,6 +169,10 @@ html, body {
   gap: 10px;
 }
 
+.message.self {
+  flex-direction: row-reverse;
+}
+
 .avatar.small {
   width: 32px;
   height: 32px;
@@ -174,13 +181,16 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e4e4e7;
 }
 
 .message-body {
-  background: #0f0f14;
+  background: #0f0f14;          /* dark grey */
   border: 1px solid #18181f;
-  padding: 10px 12px;
-  border-radius: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
   max-width: 70%;
 }
 
@@ -189,6 +199,8 @@ html, body {
 }
 
 .message-meta {
+  display: flex;
+  gap: 8px;
   font-size: 0.75rem;
   color: #71717a;
   margin-bottom: 4px;
@@ -199,12 +211,14 @@ html, body {
   color: #e4e4e7;
 }
 
-/* INPUT */
+/* INPUT BAR */
+
 .chat-input {
   padding: 12px 16px;
   border-top: 1px solid #15151c;
   background: #050509;
   display: flex;
+  align-items: center;
   gap: 10px;
 }
 
@@ -215,17 +229,49 @@ html, body {
   border-radius: 8px;
   padding: 10px 12px;
   color: #f4f4f5;
+  font-size: 0.9rem;
+}
+
+.chat-input input::placeholder {
+  color: #52525b;
+}
+
+.chat-input input:focus {
+  border-color: #3f3f46;        /* subtle grey accent */
+  background: #0f0f14;
+}
+
+/* BUTTONS */
+
+.icon-btn {
+  background: #0b0b10;
+  border: 1px solid #18181f;
+  color: #a1a1aa;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.icon-btn:hover {
+  background: #14141b;
 }
 
 .send-btn {
-  background: #18181f;
+  background: #18181f;          /* dark neutral, not blue */
   border: 1px solid #27272f;
   color: #f4f4f5;
   padding: 9px 16px;
   border-radius: 8px;
+  cursor: pointer;
+}
+
+.send-btn:hover {
+  background: #20202a;
 }
 
 /* AUTH OVERLAY */
+
 .auth-overlay {
   position: fixed;
   inset: 0;
@@ -233,6 +279,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 10;
 }
 
 .auth-card {
@@ -257,6 +304,7 @@ html, body {
   border: none;
   color: #f4f4f5;
   border-radius: 6px;
+  cursor: pointer;
 }
 
 .auth-tabs .active {
@@ -280,42 +328,5 @@ html, body {
   border: 1px solid #27272f;
   color: #f4f4f5;
   border-radius: 6px;
-}
-
-/* MODALS */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: #000000aa;
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal {
-  background: #0b0b10;
-  padding: 20px;
-  border-radius: 10px;
-  width: 300px;
-  border: 1px solid #18181f;
-}
-
-.modal input {
-  width: 100%;
-  margin-bottom: 12px;
-  padding: 10px;
-  background: #0b0b10;
-  border: 1px solid #18181f;
-  border-radius: 6px;
-  color: #f4f4f5;
-}
-
-.modal button {
-  width: 100%;
-  padding: 10px;
-  background: #18181f;
-  border: 1px solid #27272f;
-  color: #f4f4f5;
-  border-radius: 6px;
-  margin-bottom: 8px;
+  cursor: pointer;
 }
