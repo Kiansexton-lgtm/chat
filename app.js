@@ -1,4 +1,4 @@
-// --- Firebase init (your config) ---
+// ---------- Firebase init ----------
 const firebaseConfig = {
   apiKey: "AIzaSyBi-PMbrCNrID4Sci2DYj7l6ewQaxIqJ4k",
   authDomain: "ubgpro.firebaseapp.com",
@@ -12,59 +12,53 @@ if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// --- DOM refs ---
+// ---------- DOM ----------
 const authScreen = document.getElementById("auth-screen");
-const mainApp = document.getElementById("main-app");
+const appEl = document.getElementById("app");
 
-// Auth tabs
-const loginTab = document.getElementById("auth-login-tab");
-const registerTab = document.getElementById("auth-register-tab");
+// auth
+const loginTab = document.getElementById("login-tab");
+const registerTab = document.getElementById("register-tab");
 const loginForm = document.getElementById("login-form");
 const registerForm = document.getElementById("register-form");
-const loginErrorEl = document.getElementById("login-error");
-const registerErrorEl = document.getElementById("register-error");
+const loginEmail = document.getElementById("login-email");
+const loginPassword = document.getElementById("login-password");
+const regUsername = document.getElementById("reg-username");
+const regEmail = document.getElementById("reg-email");
+const regPassword = document.getElementById("reg-password");
+const loginError = document.getElementById("login-error");
+const registerError = document.getElementById("register-error");
 
-// Login inputs
-const loginEmailInput = document.getElementById("login-email");
-const loginPasswordInput = document.getElementById("login-password");
-
-// Register inputs
-const registerUsernameInput = document.getElementById("register-username");
-const registerEmailInput = document.getElementById("register-email");
-const registerPasswordInput = document.getElementById("register-password");
-
-// Main UI
-const roomsListEl = document.getElementById("rooms-list");
-const dmsListEl = document.getElementById("dms-list");
-const friendsListEl = document.getElementById("friends-list");
-const friendRequestsListEl = document.getElementById("friend-requests-list");
+// main
+const roomsList = document.getElementById("rooms-list");
+const dmsList = document.getElementById("dms-list");
+const friendsList = document.getElementById("friends-list");
+const requestsList = document.getElementById("requests-list");
 const createRoomBtn = document.getElementById("create-room-btn");
 const logoutBtn = document.getElementById("logout-btn");
-const currentUserLabelEl = document.getElementById("current-user-label");
-const currentRoomNameEl = document.getElementById("current-room-name");
-const currentRoomMetaEl = document.getElementById("current-room-meta");
-
+const roomTitle = document.getElementById("room-title");
 const messagesEl = document.getElementById("messages");
 const messageForm = document.getElementById("message-form");
 const messageInput = document.getElementById("message-input");
-
-// Add friend
 const addFriendForm = document.getElementById("add-friend-form");
 const addFriendInput = document.getElementById("add-friend-input");
-const addFriendStatusEl = document.getElementById("add-friend-status");
+const addFriendStatus = document.getElementById("add-friend-status");
 
-// --- State ---
-let currentUser = null; // Firebase user
-let currentUserProfile = null; // {uid, username, tag}
+// ---------- State ----------
+let currentUser = null;
+let currentProfile = null;
 let currentRoomId = null;
-let currentRoomUnsub = null;
+let currentRoomIsDM = false;
+
 let roomsUnsub = null;
 let dmsUnsub = null;
 let friendsUnsub = null;
 let requestsUnsub = null;
+let messagesUnsub = null;
 
-// --- Helpers ---
+const profileCache = new Map();
 
+// ---------- Helpers ----------
 function randomTag() {
   return Math.floor(1000 + Math.random() * 9000).toString();
 }
@@ -73,67 +67,52 @@ function userDisplayName(profile) {
   return `${profile.username}#${profile.tag}`;
 }
 
+async function getUserProfile(uid) {
+  if (profileCache.has(uid)) return profileCache.get(uid);
+  const doc = await db.collection("users").doc(uid).get();
+  const data = doc.exists
+    ? doc.data()
+    : { uid, username: "Unknown", tag: "0000" };
+  profileCache.set(uid, data);
+  return data;
+}
+
 function clearMessages() {
   messagesEl.innerHTML = "";
 }
 
 function renderMessage(doc) {
   const data = doc.data();
-  const isSelf = data.senderId === currentUser.uid;
-
   const row = document.createElement("div");
-  row.classList.add("message-row");
-  if (isSelf) row.classList.add("self");
-
-  const avatar = document.createElement("div");
-  avatar.classList.add("message-avatar");
-  avatar.textContent = (data.senderName || "?")[0]?.toUpperCase() || "?";
-
-  const content = document.createElement("div");
-  content.classList.add("message-content");
+  row.classList.add("message");
 
   const header = document.createElement("div");
   header.classList.add("message-header");
-
-  const usernameEl = document.createElement("span");
-  usernameEl.classList.add("message-username");
-  usernameEl.textContent = data.senderName || "Unknown";
-
-  const tsEl = document.createElement("span");
-  tsEl.classList.add("message-timestamp");
   const date = data.createdAt?.toDate
     ? data.createdAt.toDate()
     : new Date();
-  tsEl.textContent = date.toLocaleTimeString([], {
+  header.textContent = `${data.senderName || "Unknown"} • ${date.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
-  });
+  })}`;
 
-  header.appendChild(usernameEl);
-  header.appendChild(tsEl);
+  const text = document.createElement("div");
+  text.classList.add("message-text");
+  text.textContent = data.text || "";
 
-  const bubble = document.createElement("div");
-  bubble.classList.add("message-bubble");
-  bubble.textContent = data.text || "";
-
-  content.appendChild(header);
-  content.appendChild(bubble);
-
-  row.appendChild(avatar);
-  row.appendChild(content);
-
+  row.appendChild(header);
+  row.appendChild(text);
   messagesEl.appendChild(row);
 }
 
-// --- Auth tab switching ---
-
+// ---------- Auth tabs ----------
 loginTab.addEventListener("click", () => {
   loginTab.classList.add("active");
   registerTab.classList.remove("active");
   loginForm.classList.remove("hidden");
   registerForm.classList.add("hidden");
-  loginErrorEl.textContent = "";
-  registerErrorEl.textContent = "";
+  loginError.textContent = "";
+  registerError.textContent = "";
 });
 
 registerTab.addEventListener("click", () => {
@@ -141,35 +120,33 @@ registerTab.addEventListener("click", () => {
   loginTab.classList.remove("active");
   registerForm.classList.remove("hidden");
   loginForm.classList.add("hidden");
-  loginErrorEl.textContent = "";
-  registerErrorEl.textContent = "";
+  loginError.textContent = "";
+  registerError.textContent = "";
 });
 
-// --- Auth flows ---
-
+// ---------- Auth flows ----------
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  loginErrorEl.textContent = "";
+  loginError.textContent = "";
   try {
     await auth.signInWithEmailAndPassword(
-      loginEmailInput.value.trim(),
-      loginPasswordInput.value.trim()
+      loginEmail.value.trim(),
+      loginPassword.value.trim()
     );
   } catch (err) {
-    console.error(err);
-    loginErrorEl.textContent = err.message;
+    loginError.textContent = err.message;
   }
 });
 
 registerForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  registerErrorEl.textContent = "";
-  const username = registerUsernameInput.value.trim();
-  const email = registerEmailInput.value.trim();
-  const password = registerPasswordInput.value.trim();
+  registerError.textContent = "";
+  const username = regUsername.value.trim();
+  const email = regEmail.value.trim();
+  const password = regPassword.value.trim();
 
   if (!username) {
-    registerErrorEl.textContent = "Username is required.";
+    registerError.textContent = "Username required.";
     return;
   }
 
@@ -177,7 +154,6 @@ registerForm.addEventListener("submit", async (e) => {
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     const uid = cred.user.uid;
     const tag = randomTag();
-
     await db.collection("users").doc(uid).set({
       uid,
       username,
@@ -185,40 +161,32 @@ registerForm.addEventListener("submit", async (e) => {
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
   } catch (err) {
-    console.error(err);
-    registerErrorEl.textContent = err.message;
+    registerError.textContent = err.message;
   }
 });
 
-// --- Auth state listener ---
-
+// ---------- Auth state ----------
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
     currentUser = null;
-    currentUserProfile = null;
+    currentProfile = null;
     authScreen.classList.remove("hidden");
-    mainApp.classList.add("hidden");
-    cleanupSubscriptions();
+    appEl.classList.add("hidden");
+    cleanupSubs();
     return;
   }
 
   currentUser = user;
-  await loadCurrentUserProfile();
+  await loadProfile();
   authScreen.classList.add("hidden");
-  mainApp.classList.remove("hidden");
-  currentUserLabelEl.textContent = currentUserProfile
-    ? userDisplayName(currentUserProfile)
-    : user.email;
-
-  setupRealtimeLists();
+  appEl.classList.remove("hidden");
+  setupLists();
 });
 
-// --- Load current user profile ---
-
-async function loadCurrentUserProfile() {
+// load profile
+async function loadProfile() {
   const doc = await db.collection("users").doc(currentUser.uid).get();
   if (!doc.exists) {
-    // Fallback profile if user existed before profile system
     const username = currentUser.email.split("@")[0];
     const tag = randomTag();
     await db.collection("users").doc(currentUser.uid).set({
@@ -227,160 +195,131 @@ async function loadCurrentUserProfile() {
       tag,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
-    currentUserProfile = { uid: currentUser.uid, username, tag };
+    currentProfile = { uid: currentUser.uid, username, tag };
   } else {
-    currentUserProfile = doc.data();
+    currentProfile = doc.data();
   }
 }
 
-// --- Subscriptions ---
-
-function cleanupSubscriptions() {
+// ---------- Subscriptions ----------
+function cleanupSubs() {
   if (roomsUnsub) roomsUnsub();
   if (dmsUnsub) dmsUnsub();
   if (friendsUnsub) friendsUnsub();
   if (requestsUnsub) requestsUnsub();
-  if (currentRoomUnsub) currentRoomUnsub();
+  if (messagesUnsub) messagesUnsub();
 }
 
-function setupRealtimeLists() {
-  // Rooms where user is a member and isDM == false
+function setupLists() {
+  cleanupSubs();
+
+  // channels
   roomsUnsub = db
     .collection("rooms")
     .where("members", "array-contains", currentUser.uid)
     .where("isDM", "==", false)
     .orderBy("createdAt", "asc")
     .onSnapshot((snap) => {
-      roomsListEl.innerHTML = "";
+      roomsList.innerHTML = "";
       snap.forEach((doc) => {
         const data = doc.data();
         const item = document.createElement("div");
-        item.classList.add("sidebar-item");
+        item.classList.add("list-item");
         if (doc.id === currentRoomId) item.classList.add("active");
-        item.innerHTML = `<span># ${data.name}</span>`;
-        item.addEventListener("click", () => openRoom(doc.id, data));
-        roomsListEl.appendChild(item);
+        item.textContent = `# ${data.name}`;
+        item.addEventListener("click", () =>
+          openRoom(doc.id, false, data.name)
+        );
+        roomsList.appendChild(item);
       });
     });
 
-  // DMs: rooms where isDM == true
+  // DMs
   dmsUnsub = db
     .collection("rooms")
     .where("members", "array-contains", currentUser.uid)
     .where("isDM", "==", true)
     .orderBy("createdAt", "asc")
     .onSnapshot((snap) => {
-      dmsListEl.innerHTML = "";
+      dmsList.innerHTML = "";
       snap.forEach((doc) => {
         const data = doc.data();
-        const otherMember = (data.members || []).find(
-          (m) => m !== currentUser.uid
-        );
         const item = document.createElement("div");
-        item.classList.add("sidebar-item");
+        item.classList.add("list-item");
         if (doc.id === currentRoomId) item.classList.add("active");
-        item.innerHTML = `<span>@ ${data.dmName || "DM"}</span>`;
-        item.addEventListener("click", () => openRoom(doc.id, data));
-        dmsListEl.appendChild(item);
+        item.textContent = data.dmName || "Direct Message";
+        item.addEventListener("click", () =>
+          openRoom(doc.id, true, data.dmName || "Direct Message")
+        );
+        dmsList.appendChild(item);
       });
     });
 
-  // Friends
+  // friends
   friendsUnsub = db
     .collection("friends")
     .where("participants", "array-contains", currentUser.uid)
     .where("status", "==", "accepted")
     .onSnapshot(async (snap) => {
-      friendsListEl.innerHTML = "";
+      friendsList.innerHTML = "";
       for (const doc of snap.docs) {
         const data = doc.data();
         const friendId =
           data.userA === currentUser.uid ? data.userB : data.userA;
-        const friendProfile = await getUserProfile(friendId);
+        const profile = await getUserProfile(friendId);
         const item = document.createElement("div");
-        item.classList.add("friend-item");
-        item.innerHTML = `
-          <span>${userDisplayName(friendProfile)}</span>
-        `;
-        const dmBtn = document.createElement("button");
-        dmBtn.textContent = "Message";
-        dmBtn.addEventListener("click", () =>
-          openOrCreateDM(friendId, friendProfile)
-        );
-        item.appendChild(dmBtn);
-        friendsListEl.appendChild(item);
+        item.classList.add("list-item");
+        item.textContent = userDisplayName(profile);
+        item.addEventListener("click", () => openOrCreateDM(friendId, profile));
+        friendsList.appendChild(item);
       }
     });
 
-  // Friend requests (incoming)
+  // requests
   requestsUnsub = db
     .collection("friends")
     .where("userB", "==", currentUser.uid)
     .where("status", "==", "pending")
     .onSnapshot(async (snap) => {
-      friendRequestsListEl.innerHTML = "";
+      requestsList.innerHTML = "";
       for (const doc of snap.docs) {
         const data = doc.data();
         const fromProfile = await getUserProfile(data.userA);
-        const item = document.createElement("div");
-        item.classList.add("request-item");
-        const label = document.createElement("span");
-        label.textContent = `${userDisplayName(fromProfile)}`;
-        item.appendChild(label);
+        const row = document.createElement("div");
+        row.classList.add("list-item");
+        row.textContent = userDisplayName(fromProfile);
 
-        const actions = document.createElement("div");
         const acceptBtn = document.createElement("button");
         acceptBtn.textContent = "Accept";
-        acceptBtn.classList.add("accept");
+        acceptBtn.style.marginLeft = "6px";
         acceptBtn.addEventListener("click", () =>
-          respondToFriendRequest(doc.id, true)
+          respondToRequest(doc.id, true)
         );
 
         const declineBtn = document.createElement("button");
-        declineBtn.textContent = "Decline";
-        declineBtn.classList.add("decline");
+        declineBtn.textContent = "X";
+        declineBtn.style.marginLeft = "4px";
         declineBtn.addEventListener("click", () =>
-          respondToFriendRequest(doc.id, false)
+          respondToRequest(doc.id, false)
         );
 
-        actions.appendChild(acceptBtn);
-        actions.appendChild(declineBtn);
-        item.appendChild(actions);
-
-        friendRequestsListEl.appendChild(item);
+        row.appendChild(acceptBtn);
+        row.appendChild(declineBtn);
+        requestsList.appendChild(row);
       }
     });
 }
 
-// --- User profile cache ---
-
-const userProfileCache = new Map();
-
-async function getUserProfile(uid) {
-  if (userProfileCache.has(uid)) return userProfileCache.get(uid);
-  const doc = await db.collection("users").doc(uid).get();
-  const data = doc.exists
-    ? doc.data()
-    : { uid, username: "Unknown", tag: "0000" };
-  userProfileCache.set(uid, data);
-  return data;
-}
-
-// --- Rooms & messages ---
-
-async function openRoom(roomId, roomData) {
+// ---------- Rooms & messages ----------
+async function openRoom(roomId, isDM, title) {
   currentRoomId = roomId;
-  currentRoomNameEl.textContent = roomData.isDM
-    ? roomData.dmName || "Direct Message"
-    : `# ${roomData.name}`;
-  currentRoomMetaEl.textContent = roomData.isDM
-    ? "Direct message"
-    : "Room chat";
+  currentRoomIsDM = isDM;
+  roomTitle.textContent = title;
 
-  if (currentRoomUnsub) currentRoomUnsub();
+  if (messagesUnsub) messagesUnsub();
   clearMessages();
 
-  currentRoomUnsub = db
+  messagesUnsub = db
     .collection("rooms")
     .doc(roomId)
     .collection("messages")
@@ -392,42 +331,31 @@ async function openRoom(roomId, roomData) {
       messagesEl.scrollTop = messagesEl.scrollHeight;
     });
 
-  // Update active state in sidebars
-  document.querySelectorAll(".sidebar-item").forEach((el) => {
-    el.classList.remove("active");
-  });
-  // naive: re-run lists will mark active via openRoom call
+  document.querySelectorAll(".list-item").forEach((el) =>
+    el.classList.remove("active")
+  );
 }
 
-// Create room
 createRoomBtn.addEventListener("click", async () => {
-  const name = prompt("Room name:");
+  const name = prompt("Channel name:");
   if (!name) return;
   try {
     const ref = await db.collection("rooms").add({
       name,
-      ownerId: currentUser.uid,
-      members: [currentUser.uid],
       isDM: false,
+      members: [currentUser.uid],
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
-    // auto-open
-    openRoom(ref.id, {
-      name,
-      ownerId: currentUser.uid,
-      members: [currentUser.uid],
-      isDM: false,
-    });
+    openRoom(ref.id, false, `# ${name}`);
   } catch (err) {
     console.error("Error creating room:", err);
   }
 });
 
-// Send message
 messageForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const text = messageInput.value.trim();
-  if (!text || !currentRoomId || !currentUserProfile) return;
+  if (!text || !currentRoomId || !currentProfile) return;
   messageInput.value = "";
   messageInput.focus();
 
@@ -439,7 +367,7 @@ messageForm.addEventListener("submit", async (e) => {
       .add({
         text,
         senderId: currentUser.uid,
-        senderName: userDisplayName(currentUserProfile),
+        senderName: userDisplayName(currentProfile),
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
   } catch (err) {
@@ -447,40 +375,38 @@ messageForm.addEventListener("submit", async (e) => {
   }
 });
 
-// --- Friends system ---
-
+// ---------- Friends ----------
 addFriendForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  addFriendStatusEl.textContent = "";
+  addFriendStatus.textContent = "";
   const value = addFriendInput.value.trim();
   if (!value) return;
 
   const [username, tag] = value.split("#");
   if (!username || !tag) {
-    addFriendStatusEl.textContent = "Use format username#tag";
+    addFriendStatus.textContent = "Use username#tag";
     return;
   }
 
   try {
-    const userSnap = await db
+    const snap = await db
       .collection("users")
       .where("username", "==", username)
       .where("tag", "==", tag)
       .limit(1)
       .get();
 
-    if (userSnap.empty) {
-      addFriendStatusEl.textContent = "User not found.";
+    if (snap.empty) {
+      addFriendStatus.textContent = "User not found.";
       return;
     }
 
-    const target = userSnap.docs[0].data();
+    const target = snap.docs[0].data();
     if (target.uid === currentUser.uid) {
-      addFriendStatusEl.textContent = "You can't add yourself.";
+      addFriendStatus.textContent = "You can't add yourself.";
       return;
     }
 
-    // Check existing relationship
     const existing = await db
       .collection("friends")
       .where("participants", "array-contains", currentUser.uid)
@@ -490,12 +416,12 @@ addFriendForm.addEventListener("submit", async (e) => {
       const d = doc.data();
       return (
         (d.userA === currentUser.uid && d.userB === target.uid) ||
-        (d.userB === currentUser.uid && d.userA === target.uid)
+        (d.userB === currentUser.uid && d.userA === currentUser.uid)
       );
     });
 
     if (already) {
-      addFriendStatusEl.textContent = "Friend request already exists or you're already friends.";
+      addFriendStatus.textContent = "Already friends or pending.";
       return;
     }
 
@@ -507,31 +433,29 @@ addFriendForm.addEventListener("submit", async (e) => {
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
 
-    addFriendStatusEl.textContent = "Friend request sent.";
+    addFriendStatus.textContent = "Request sent.";
     addFriendInput.value = "";
   } catch (err) {
     console.error(err);
-    addFriendStatusEl.textContent = "Error sending request.";
+    addFriendStatus.textContent = "Error sending request.";
   }
 });
 
-async function respondToFriendRequest(requestId, accept) {
+async function respondToRequest(id, accept) {
   try {
-    const ref = db.collection("friends").doc(requestId);
+    const ref = db.collection("friends").doc(id);
     if (accept) {
       await ref.update({ status: "accepted" });
     } else {
       await ref.delete();
     }
   } catch (err) {
-    console.error("Error responding to request:", err);
+    console.error("Error updating request:", err);
   }
 }
 
-// --- DMs ---
-
+// ---------- DMs ----------
 async function openOrCreateDM(friendId, friendProfile) {
-  // Try to find existing DM room
   const snap = await db
     .collection("rooms")
     .where("isDM", "==", true)
@@ -541,16 +465,17 @@ async function openOrCreateDM(friendId, friendProfile) {
   let existing = null;
   snap.forEach((doc) => {
     const data = doc.data();
-    if (data.members.includes(friendId)) existing = { id: doc.id, data };
+    if (data.members.includes(friendId)) {
+      existing = { id: doc.id, data };
+    }
   });
 
   if (existing) {
-    openRoom(existing.id, existing.data);
+    openRoom(existing.id, true, existing.data.dmName || "Direct Message");
     return;
   }
 
-  // Create new DM room
-  const dmName = `${userDisplayName(friendProfile)}`;
+  const dmName = userDisplayName(friendProfile);
   const ref = await db.collection("rooms").add({
     isDM: true,
     members: [currentUser.uid, friendId],
@@ -558,15 +483,10 @@ async function openOrCreateDM(friendId, friendProfile) {
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
   });
 
-  openRoom(ref.id, {
-    isDM: true,
-    members: [currentUser.uid, friendId],
-    dmName,
-  });
+  openRoom(ref.id, true, dmName);
 }
 
-// --- Logout ---
-
+// ---------- Logout ----------
 logoutBtn.addEventListener("click", () => {
   auth.signOut();
 });
