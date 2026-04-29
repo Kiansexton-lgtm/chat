@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dark Chat</title>
+  <title>Dark DM</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-  <!-- LOGIN / REGISTER OVERLAY -->
+  <!-- AUTH OVERLAY -->
   <div class="auth-overlay" id="authOverlay">
     <div class="auth-card">
-      <h1>Dark Chat</h1>
+      <h1>Dark DM</h1>
 
       <div class="auth-tabs">
         <button id="loginTab" class="active">Login</button>
@@ -26,36 +26,36 @@
     </div>
   </div>
 
-  <!-- SERVER BAR -->
-  <div class="server-bar" id="serverBar">
-    <div class="server-icon home">H</div>
-    <div class="server-separator"></div>
-    <div id="serverList"></div>
-    <div class="server-icon add" id="addServerBtn">+</div>
-  </div>
-
   <div class="app">
 
     <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="user-section">
-        <div class="avatar">U</div>
+        <div class="avatar" id="selfAvatar">U</div>
         <div class="status-dot"></div>
+        <div class="self-username" id="selfUsername">@user</div>
       </div>
 
-      <div class="section-title">Channels</div>
-      <ul class="channel-list" id="channelList"></ul>
+      <div class="section-title">Add Friend</div>
+      <div class="add-friend">
+        <input id="addFriendInput" placeholder="Username" />
+        <button class="icon-btn" id="addFriendBtn">Add</button>
+      </div>
 
-      <button class="create-channel-btn" id="createChannelBtn">+ Create Channel</button>
+      <div class="section-title">Friend Requests</div>
+      <ul class="request-list" id="requestList"></ul>
+
+      <div class="section-title">Friends</div>
+      <ul class="friend-list" id="friendList"></ul>
     </aside>
 
     <!-- CHAT -->
     <main class="chat">
       <header class="chat-header">
-        <div>
-          <div class="chat-title" id="currentChannelName">Select a channel</div>
+        <div class="chat-header-info">
+          <div class="chat-title" id="chatTitle">Select a friend</div>
+          <div class="chat-subtitle" id="chatSubtitle"></div>
         </div>
-        <button id="serverSettingsBtn" class="icon-btn">⚙</button>
       </header>
 
       <section class="messages" id="messages"></section>
@@ -66,27 +66,6 @@
       </footer>
     </main>
 
-  </div>
-
-  <!-- SERVER SETTINGS MODAL -->
-  <div class="modal-overlay" id="serverModal">
-    <div class="modal">
-      <h2>Server Settings</h2>
-      <input id="serverNameInput" placeholder="Server Name" />
-      <input id="serverColorInput" type="color" />
-      <button id="saveServerSettings">Save</button>
-      <button id="closeServerModal">Close</button>
-    </div>
-  </div>
-
-  <!-- CHANNEL CREATION MODAL -->
-  <div class="modal-overlay" id="channelModal">
-    <div class="modal">
-      <h2>Create Channel</h2>
-      <input id="channelNameInput" placeholder="Channel Name" />
-      <button id="createChannelConfirm">Create</button>
-      <button id="closeChannelModal">Close</button>
-    </div>
   </div>
 
   <!-- FIREBASE -->
