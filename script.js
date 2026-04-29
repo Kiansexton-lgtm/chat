@@ -17,157 +17,269 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 
 /* ============================
-   USERNAME + PASSWORD SYSTEM
+   USERNAME + PASSWORD
 ============================ */
 
 function isValidUsername(username) {
   return /^[a-zA-Z0-9_]{3,16}$/.test(username);
 }
 
-// REGISTER USER
 async function register(username, password) {
   username = username.toLowerCase();
 
   if (!isValidUsername(username)) {
-    alert("Username must be 3–16 characters, letters/numbers/underscores only");
+    alert("Username must be 3–16 chars, letters/numbers/underscores only");
     return;
   }
 
-  // Check duplicate username
   const userDoc = await db.collection("users").doc(username).get();
   if (userDoc.exists) {
     alert("Username already taken");
     return;
   }
 
-  const fakeEmail = `${username}@chatapp.local`;
+  const fakeEmail = `${username}@darkdm.local`;
 
-  // Create Firebase Auth user
-  const userCred = await auth.createUserWithEmailAndPassword(fakeEmail, password);
+  const cred = await auth.createUserWithEmailAndPassword(fakeEmail, password);
 
-  // Save username in Firestore
   await db.collection("users").doc(username).set({
-    uid: userCred.user.uid,
+    uid: cred.user.uid,
     username,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 
-  alert("Account created");
+  alert("Account created, now log in");
 }
 
-// LOGIN USER
 async function login(username, password) {
   username = username.toLowerCase();
-  const fakeEmail = `${username}@chatapp.local`;
+  const fakeEmail = `${username}@darkdm.local`;
 
   try {
     await auth.signInWithEmailAndPassword(fakeEmail, password);
-    alert("Logged in");
-  } catch (err) {
+    document.getElementById("authOverlay").style.display = "none";
+  } catch (e) {
     alert("Invalid username or password");
   }
 }
 
-// GET CURRENT USERNAME
 async function getCurrentUsername() {
   const uid = auth.currentUser.uid;
-
-  const snap = await db.collection("users")
-    .where("uid", "==", uid)
-    .limit(1)
-    .get();
-
-  if (!snap.empty) {
-    return snap.docs[0].data().username;
-  }
-
+  const snap = await db.collection("users").where("uid", "==", uid).limit(1).get();
+  if (!snap.empty) return snap.docs[0].data().username;
   return null;
 }
 
 /* ============================
-   UI ELEMENTS
+   AUTH UI
 ============================ */
 
-const serverList = document.getElementById("serverList");
-const channelList = document.getElementById("channelList");
-const messagesDiv = document.getElementById("messages");
-const sendBtn = document.getElementById("sendBtn");
-const messageInput = document.getElementById("messageInput");
-const addServerBtn = document.getElementById("addServerBtn");
+let authMode = "login";
 
-let currentServer = null;
-let currentChannel = null;
+const loginTab = document.getElementById("loginTab");
+const registerTab = document.getElementById("registerTab");
+const authSubmit = document.getElementById("authSubmit");
 
-/* ============================
-   SERVER SYSTEM
-============================ */
+loginTab.onclick = () => {
+  authMode = "login";
+  loginTab.classList.add("active");
+  registerTab.classList.remove("active");
+};
 
-// Load servers in real time
-db.collection("servers").onSnapshot(snapshot => {
-  serverList.innerHTML = "";
-  snapshot.forEach(doc => {
-    const data = doc.data();
+registerTab.onclick = () => {
+  authMode = "register";
+  registerTab.classList.add("active");
+  loginTab.classList.remove("active");
+};
 
-    const icon = document.createElement("div");
-    icon.className = "server-icon";
-    icon.style.background = data.color;
-    icon.textContent = data.name[0].toUpperCase();
+authSubmit.onclick = async () => {
+  const username = document.getElementById("authUsername").value.trim();
+  const password = document.getElementById("authPassword").value.trim();
+  if (!username || !password) return;
 
-    icon.onclick = () => loadServer(doc.id);
-
-    serverList.appendChild(icon);
-  });
-});
-
-// Create a new server
-addServerBtn.onclick = async () => {
-  const name = prompt("Server name:");
-  if (!name) return;
-
-  const color = "#18181b"; // dark neutral
-
-  await db.collection("servers").add({
-    name,
-    color
-  });
+  if (authMode === "login") {
+    await login(username, password);
+  } else {
+    await register(username, password);
+  }
 };
 
 /* ============================
-   CHANNEL SYSTEM
+   GLOBAL STATE
 ============================ */
 
-async function loadServer(id) {
-  currentServer = id;
+let currentUser = null;
+let activeFriend = null;
+let messagesUnsub = null;
 
-  db.collection("servers")
-    .doc(id)
-    .collection("channels")
+/* DOM REFS */
+
+const selfAvatar = document.getElementById("selfAvatar");
+const selfUsernameEl = document.getElementById("selfUsername");
+const friendListEl = document.getElementById("friendList");
+const requestListEl = document.getElementById("requestList");
+const addFriendInput = document.getElementById("addFriendInput");
+const addFriendBtn = document.getElementById("addFriendBtn");
+const messagesDiv = document.getElementById("messages");
+const chatTitle = document.getElementById("chatTitle");
+const chatSubtitle = document.getElementById("chatSubtitle");
+const messageInput = document.getElementById("messageInput");
+const sendBtn = document.getElementById("sendBtn");
+
+/* ============================
+   AUTH STATE
+============================ */
+
+auth.onAuthStateChanged(async user => {
+  if (!user) return;
+
+  currentUser = await getCurrentUsername();
+  if (!currentUser) return;
+
+  selfAvatar.textContent = currentUser[0].toUpperCase();
+  selfUsernameEl.textContent = "@" + currentUser;
+
+  document.getElementById("authOverlay").style.display = "none";
+
+  listenFriendRequests();
+  listenFriends();
+});
+
+/* ============================
+   FRIEND SYSTEM
+============================ */
+
+// friendRequests: {from, to, status: 'pending'|'accepted'|'declined'}
+
+addFriendBtn.onclick = async () => {
+  const target = addFriendInput.value.trim().toLowerCase();
+  if (!target || target === currentUser) return;
+
+  const userDoc = await db.collection("users").doc(target).get();
+  if (!userDoc.exists) {
+    alert("User not found");
+    return;
+  }
+
+  // Check if already friends
+  const friendDoc = await db.collection("users")
+    .doc(currentUser)
+    .collection("friends")
+    .doc(target)
+    .get();
+
+  if (friendDoc.exists) {
+    alert("Already friends");
+    return;
+  }
+
+  // Check if request already exists
+  const existingReq = await db.collection("friendRequests")
+    .where("from", "==", currentUser)
+    .where("to", "==", target)
+    .where("status", "==", "pending")
+    .get();
+
+  if (!existingReq.empty) {
+    alert("Request already sent");
+    return;
+  }
+
+  await db.collection("friendRequests").add({
+    from: currentUser,
+    to: target,
+    status: "pending",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  alert("Friend request sent");
+  addFriendInput.value = "";
+};
+
+function listenFriendRequests() {
+  db.collection("friendRequests")
+    .where("to", "==", currentUser)
+    .where("status", "==", "pending")
     .onSnapshot(snapshot => {
-      channelList.innerHTML = "";
+      requestListEl.innerHTML = "";
       snapshot.forEach(doc => {
+        const data = doc.data();
         const li = document.createElement("li");
-        li.className = "channel";
-        li.textContent = "#" + doc.data().name;
+        li.className = "request-item";
+        li.innerHTML = `
+          <span>${data.from}</span>
+          <div class="request-actions">
+            <button class="icon-btn" data-action="accept">✓</button>
+            <button class="icon-btn" data-action="decline">✕</button>
+          </div>
+        `;
 
-        li.onclick = () => loadChannel(doc.id, doc.data().name);
+        li.querySelector('[data-action="accept"]').onclick = () => handleRequest(doc.id, data.from, true);
+        li.querySelector('[data-action="decline"]').onclick = () => handleRequest(doc.id, data.from, false);
 
-        channelList.appendChild(li);
+        requestListEl.appendChild(li);
+      });
+    });
+}
+
+async function handleRequest(id, fromUser, accept) {
+  const ref = db.collection("friendRequests").doc(id);
+
+  if (!accept) {
+    await ref.update({ status: "declined" });
+    return;
+  }
+
+  await ref.update({ status: "accepted" });
+
+  // Add to both friends lists
+  const batch = db.batch();
+
+  const myFriendRef = db.collection("users").doc(currentUser).collection("friends").doc(fromUser);
+  const theirFriendRef = db.collection("users").doc(fromUser).collection("friends").doc(currentUser);
+
+  batch.set(myFriendRef, { username: fromUser });
+  batch.set(theirFriendRef, { username: currentUser });
+
+  await batch.commit();
+}
+
+function listenFriends() {
+  db.collection("users")
+    .doc(currentUser)
+    .collection("friends")
+    .onSnapshot(snapshot => {
+      friendListEl.innerHTML = "";
+      snapshot.forEach(doc => {
+        const friendName = doc.id;
+        const li = document.createElement("li");
+        li.className = "friend-item";
+        li.textContent = friendName;
+        li.onclick = () => openChat(friendName);
+        friendListEl.appendChild(li);
       });
     });
 }
 
 /* ============================
-   MESSAGE SYSTEM
+   DM CHAT
 ============================ */
 
-function loadChannel(id, name) {
-  currentChannel = id;
-  document.getElementById("currentChannelName").textContent = "#" + name;
+function getRoomId(a, b) {
+  return [a, b].sort().join("__");
+}
 
-  db.collection("servers")
-    .doc(currentServer)
-    .collection("channels")
-    .doc(id)
+function openChat(friendName) {
+  activeFriend = friendName;
+  chatTitle.textContent = friendName;
+  chatSubtitle.textContent = "Direct Message";
+
+  if (messagesUnsub) messagesUnsub();
+
+  const roomId = getRoomId(currentUser, activeFriend);
+
+  messagesUnsub = db.collection("dmRooms")
+    .doc(roomId)
     .collection("messages")
     .orderBy("timestamp")
     .onSnapshot(snapshot => {
@@ -175,10 +287,21 @@ function loadChannel(id, name) {
       snapshot.forEach(doc => {
         const msg = doc.data();
         const div = document.createElement("div");
-        div.className = "message";
+        const isSelf = msg.from === currentUser;
+
+        div.className = "message" + (isSelf ? " self" : "");
+
+        const timeStr = msg.timestamp
+          ? new Date(msg.timestamp.toDate()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : "";
 
         div.innerHTML = `
+          <div class="avatar small">${msg.from[0].toUpperCase()}</div>
           <div class="message-body">
+            <div class="message-meta">
+              <span>${msg.from}</span>
+              <span>${timeStr}</span>
+            </div>
             <div class="message-text">${msg.text}</div>
           </div>
         `;
@@ -190,25 +313,29 @@ function loadChannel(id, name) {
     });
 }
 
-// Send message
+/* ============================
+   SEND MESSAGE
+============================ */
+
 sendBtn.onclick = sendMessage;
 messageInput.onkeydown = e => {
   if (e.key === "Enter") sendMessage();
 };
 
 async function sendMessage() {
-  if (!currentChannel || !messageInput.value.trim()) return;
+  if (!activeFriend) return;
+  const text = messageInput.value.trim();
+  if (!text) return;
 
-  const username = await getCurrentUsername();
+  const roomId = getRoomId(currentUser, activeFriend);
 
-  db.collection("servers")
-    .doc(currentServer)
-    .collection("channels")
-    .doc(currentChannel)
+  await db.collection("dmRooms")
+    .doc(roomId)
     .collection("messages")
     .add({
-      text: messageInput.value,
-      username,
+      from: currentUser,
+      to: activeFriend,
+      text,
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
 
